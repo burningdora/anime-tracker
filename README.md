@@ -1,56 +1,192 @@
-# Welcome to your Expo app 👋
+# Anime Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Учебное мобильное приложение на **Expo / React Native / TypeScript**: каталог аниме с
+[AniList GraphQL API](https://graphql.anilist.co), избранное на общем состоянии и личный список
+просмотра, который хранится в **SQLite** и остаётся после перезапуска приложения.
 
-## Get started
+Проект выполнен по курсу «Разработка мобильных приложений с использованием React Native»
+(3 курс, Прикладная информатика).
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## Возможности
 
-2. Start the app
+- **Каталог** — популярные тайтлы AniList, по 18 на страницу, постеры, год, формат, число серий, оценка, жанры.
+- **Поиск** — с задержкой 450 мс (debounce), чтобы не отправлять запрос на каждую букву.
+- **Серверная пагинация** — «Назад» / «Далее», «Страница X из Y», кнопки блокируются на границах и во время загрузки.
+- **Четыре состояния экрана** — loading, error, empty, success + pull-to-refresh и кнопка «Повторить».
+- **Избранное** — `Context` + `useReducer`, один источник истины для карточки, деталей и отдельной вкладки.
+- **Личный список** — статус, просмотренные серии, оценка 1–10, заметка; добавление, редактирование, удаление.
+- **Детали тайтла** — постер, метаданные, жанры, описание, переход к записи.
+- **Экран загрузки** — фон совпадает с фоном GIF, персонаж по центру, лоадер и название пиксельным шрифтом.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## Стек
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Технология | Версия / роль |
+| --- | --- |
+| Expo SDK | 58 |
+| React Native | 0.88.1 |
+| React | 19.3 |
+| TypeScript | strict, без `any` |
+| Expo Router | Stack, Tabs, динамический маршрут `[id]`, modal |
+| AniList GraphQL | каталог, поиск, детали |
+| `Context` + `useReducer` | избранное |
+| `expo-sqlite` | личный список (CRUD) |
+| `expo-image` | постеры, GIF |
+| `@expo-google-fonts/press-start-2p` | пиксельный шрифт |
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Запуск
 
-When you're ready, run:
+Нужны Node.js 20+ и приложение **Expo Go** на телефоне.
 
 ```bash
-npm run reset-project
+npm install
+npm start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Телефон и компьютер должны быть в одной Wi-Fi-сети. Отсканируй QR-код из терминала в Expo Go.
 
-### Other setup steps
+Если компьютер не виден в локальной сети:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npx expo start --tunnel
+```
 
-## Learn more
+Веб-версия (SQLite работает через WASM, нужен `metro.config.js`):
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx expo start --web
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## Скриншоты
 
-Join our community of developers creating universal apps.
+> Требование лабораторной №2 — скриншоты первой и второй страницы.
+> Положить файлы в `docs/screenshots/` и заменить пути ниже.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+| Страница 1 | Страница 2 |
+| --- | --- |
+| `docs/screenshots/page-1.png` | `docs/screenshots/page-2.png` |
+
+---
+
+## Структура
+
+```
+src/
+├── app/                     маршруты Expo Router
+│   ├── _layout.tsx          шрифт, splash, SQLiteProvider, FavoritesProvider, Stack
+│   ├── (tabs)/
+│   │   ├── _layout.tsx      нижние вкладки
+│   │   ├── index.tsx        каталог
+│   │   ├── favorites.tsx    избранное
+│   │   └── my.tsx           мой список
+│   ├── anime/[id].tsx       детали тайтла
+│   └── entry.tsx            модальная форма записи
+├── api/anilist.ts           GraphQL-запросы, response.ok, маппинг ответа
+├── components/              AnimeCard, FavoriteButton, SearchInput,
+│                            PaginationControls, EntryForm, BootSplash
+├── context/                 FavoritesContext (reducer + provider)
+├── db/                      схема и репозиторий SQLite
+├── hooks/                   useAnimeList, useAnime, useEntry, useMyAnime,
+│                            useFavorites, useDebouncedValue
+├── theme/tokens.ts          цвета, отступы, радиусы
+└── types/                   Anime, AnimePageInfo, MyAnimeEntry, WatchStatus
+
+docs/
+├── lab2-dummyjson-example.tsx   лабораторный экран на DummyJSON
+└── screenshots/                 скриншоты для отчёта
+```
+
+---
+
+## Как это работает
+
+### Поток данных
+
+```
+событие → setState → render → useEffect → fetch/SQLite → setState → render
+```
+
+| Экран | Цепочка |
+| --- | --- |
+| Каталог | `CatalogScreen → useAnimeList → getAnimePage → AniList` |
+| Детали | `AnimeDetails → useAnime(id) → getAnimeById → AniList` |
+| Избранное | `FavoriteButton → dispatch → reducer → Context → все consumers` |
+| Мой список | `MyAnimeScreen → useMyAnime → getEntries → SQLite` |
+| Форма | `EntryForm → saveEntry → INSERT/UPDATE → повторный SELECT` |
+
+### Загрузка каталога
+
+`useAnimeList` держит `anime`, `pageInfo`, `loading`, `error` и `reloadKey`.
+`useEffect` с зависимостями `[page, search, reloadKey]` создаёт `AbortController`, сбрасывает
+`loading` и `error`, выполняет запрос и в `cleanup` отменяет его. Поэтому быстрый переход между
+страницами не приводит к «устаревшему» ответу на экране.
+
+### Пагинация
+
+AniList использует `page` / `perPage` и возвращает `pageInfo { total, currentPage, lastPage }`.
+Номер страницы — единственное состояние; `totalPages` не хранится, а берётся из `lastPage`.
+Кнопки используют functional update: `setPage(prev => prev + 1)`.
+
+### Избранное
+
+`favoritesReducer` — чистая функция с действиями `add`, `remove`, `clear`; массивы не мутируются.
+`add` отсекает дубликаты. Контекст обновляет карточку, детали и вкладку «Избранное» одновременно.
+
+### Личный список
+
+Таблица `my_anime` создаётся в `initDatabase` (`CREATE TABLE IF NOT EXISTS`), поле `mal_id` уникально.
+`saveEntry` делает `UPDATE`, если запись уже есть, иначе `INSERT`. Все значения передаются
+параметрами `?`. `useFocusEffect` перечитывает таблицу при возврате на вкладку.
+
+### Экран загрузки
+
+Нативный splash из `app.json` (фон `#000004`, `splash-character.png`) держится, пока не загрузится
+шрифт. Затем поверх приложения рисуется `BootSplash`: персонаж по центру, над ним полоска загрузки
+и название `ANIME TRACKER` шрифтом Press Start 2P. Через 2.4 с экран гаснет за 450 мс.
+
+---
+
+## Лабораторная №2
+
+Механика лабораторной — `useState` → `useEffect` → `fetch` → `response.ok` → loading/error/empty/success
+→ серверная пагинация → `AbortController` — реализована в `useAnimeList` и `api/anilist.ts`.
+
+Финальный проект использует AniList GraphQL (`page`/`perPage`), а лабораторный вариант на DummyJSON
+(`limit`/`skip`, `ScrollView` + `map()`, `SafeAreaView`) лежит в
+[`docs/lab2-dummyjson-example.tsx`](docs/lab2-dummyjson-example.tsx). Его можно скопировать в
+`src/app/lab2.tsx` и открыть по маршруту `/lab2`.
+
+| Требование | Где реализовано |
+| --- | --- |
+| `fetch` внутри `useEffect` | `src/hooks/useAnimeList.ts` |
+| `useState`: данные, loading, error, page, total | `useAnimeList`, `useState` в экране каталога |
+| проверка `response.ok` | `src/api/anilist.ts` |
+| серверная пагинация | `getAnimePage(page, perPage)`, `pageInfo` |
+| 4 состояния UI | `src/app/(tabs)/index.tsx` |
+| `setPage(prev => …)`, disabled | `PaginationControls`, `index.tsx` |
+| `AbortController` в cleanup | `useAnimeList` |
+| карточка отдельным компонентом | `src/components/AnimeCard.tsx` |
+| типы без `any`, `StyleSheet.create` | `src/types/*`, все компоненты |
+
+---
+
+## Проверки
+
+```bash
+npx tsc --noEmit                    # 0 ошибок
+npx expo-doctor                     # 20/20
+npx expo export --platform android  # бандл собирается
+```
+
+---
+
+## Автор
+
+Берлинская Дарья, IA-2404.
